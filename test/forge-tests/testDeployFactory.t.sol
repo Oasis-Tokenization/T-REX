@@ -35,6 +35,8 @@ contract TestTREXFactory is Test {
     ModularCompliance modularCompliance;
     Token token;
 
+    event TREXSuiteDeployed(address indexed _token, address _ir, address _irs, address _tir, address _ctr, address
+    _mc, string indexed _salt);
     function setUp() public{
         // deploy implementation contracts
         claimTopicsRegistry = new ClaimTopicsRegistry();
@@ -56,6 +58,8 @@ contract TestTREXFactory is Test {
         idFactory = new IdFactory(address(implementationAuthority));
         // deploy TREXFactory
         trexFactory = new TREXFactory(address(trexImplementationAuthority), address(idFactory));
+        // set TREXFactory on IdFactory
+        idFactory.addTokenFactory(address(trexFactory));
         // deploy IAFactory
         iaFactory = new IAFactory(address(trexFactory));
         // set factories on TREXImplementationAuthority
@@ -70,6 +74,9 @@ contract TestTREXFactory is Test {
     function testDeployTREXSuite() public returns(bool) {
         address[] memory arrAddr = new address[](0);
         bytes[] memory arrBytes = new bytes[](0);
+        uint256[] memory arrUint = new uint[](0);
+        uint256[][] memory arrUint2 = new uint[][](0);
+        bytes memory salt = abi.encodePacked(address(this), "TEST");
         ITREXFactory.TokenDetails memory tokenDetails = ITREXFactory.TokenDetails(
             address(this),
             "TEST",
@@ -77,11 +84,20 @@ contract TestTREXFactory is Test {
             18,
             address(0),
             address(0),
-            arr,
-            arr,
-            arr,
+            arrAddr,
+            arrAddr,
+            arrAddr,
             arrBytes
         );
+        ITREXFactory.ClaimDetails memory claimDetails = ITREXFactory.ClaimDetails(
+            arrUint,
+            arrAddr,
+            arrUint2
+        );
+        vm.expectEmit(false, true, false, false);
+        emit TREXSuiteDeployed(address(0), address(0), address(0), address(0), address(0), address(0), string(salt));
+        trexFactory.deployTREXSuite(string(salt), tokenDetails, claimDetails);
+
     }
 
 }
