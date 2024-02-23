@@ -4,6 +4,7 @@ import "contracts/factory/TREXGateway.sol";
 import "contracts/factory/TREXFactory.sol";
 import "@onchain-id/solidity/contracts/factory/IdFactory.sol";
 import "@onchain-id/solidity/contracts/Identity.sol";
+import "@onchain-id/solidity/contracts/proxy/ImplementationAuthority.sol";
 import "contracts/proxy/authority/TREXImplementationAuthority.sol";
 import "contracts/proxy/authority/IAFactory.sol";
 import "contracts/registry/implementation/ClaimTopicsRegistry.sol";
@@ -23,7 +24,10 @@ contract TestTREXFactory is Test {
     TREXFactory trexFactory;
     TREXGateway trexGateway;
     IdFactory idFactory;
+    ImplementationAuthority implementationAuthority;
+    Identity identity;
     TREXImplementationAuthority trexImplementationAuthority;
+    IAFactory iaFactory;
     ClaimTopicsRegistry claimTopicsRegistry;
     IdentityRegistry identityRegistry;
     IdentityRegistryStorage identityRegistryStorage;
@@ -46,13 +50,38 @@ contract TestTREXFactory is Test {
             address(trustedIssuersRegistry), address(modularCompliance));
         ITREXImplementationAuthority.Version memory version = ITREXImplementationAuthority.Version(MAJOR, MINOR, PATCH);
         trexImplementationAuthority.addAndUseTREXVersion(version, contracts);
-        // deploy factories
-        idFactory = 
-
+        // deploy OnchainID factories
+        identity = new Identity(address(this), true);
+        implementationAuthority = new ImplementationAuthority(address(identity));
+        idFactory = new IdFactory(address(implementationAuthority));
+        // deploy TREXFactory
+        trexFactory = new TREXFactory(address(trexImplementationAuthority), address(idFactory));
+        // deploy IAFactory
+        iaFactory = new IAFactory(address(trexFactory));
+        // set factories on TREXImplementationAuthority
+        trexImplementationAuthority.setTREXFactory(address(trexFactory));
+        trexImplementationAuthority.setIAFactory(address(iaFactory));
     }
 
     function testBool() public returns(bool) {
         return true;
+    }
+
+    function testDeployTREXSuite() public returns(bool) {
+        address[] memory arrAddr = new address[](0);
+        bytes[] memory arrBytes = new bytes[](0);
+        ITREXFactory.TokenDetails memory tokenDetails = ITREXFactory.TokenDetails(
+            address(this),
+            "TEST",
+            "TST",
+            18,
+            address(0),
+            address(0),
+            arr,
+            arr,
+            arr,
+            arrBytes
+        );
     }
 
 }
